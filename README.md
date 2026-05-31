@@ -54,7 +54,7 @@ at the top of each tool for details.
  
 You must supply your own Neo Geo BIOS — it is copyrighted and not included.
 
-I've only tested this with [gngeo](https://github.com/sflores12/gngeo). It may not render correctly on real hardware
+I've only tested this with [gngeo](https://github.com/dciabrin/gngeo) It may not render correctly on real hardware
  
 ## Acknowledgements
 
