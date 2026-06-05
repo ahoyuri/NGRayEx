@@ -61,11 +61,13 @@ $(PROM1): $(ELF)
 # Add your dependencies below to convert images to fixed tile binary data
 # and pack it into the fixed tile ROM (referenced by symbol SROM1)
 # 
-# By default, this makefile creates a tileset ROM with small and tall
-# latin characters for printing ASCII string, and tiles that are
-# displayed during the attract mode.
 # Note: build rules (%.gif -> %.fix) are defined in Makefile.build
-$(SROM1): rom/s1.bin
+$(BUILDDIR)/assets/font.fix: assets/font.gif
+	$(TILETOOL) --fix -c $< -o $@
+
+$(SROM1): rom/s1.bin $(BUILDDIR)/assets/font.fix | $(ROM)
+	cat $^ > $@
+	$(TRUNCATE) -s $(SROMSIZE) $@
 
 
 

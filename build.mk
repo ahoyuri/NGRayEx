@@ -119,8 +119,9 @@ $(MROM1): | $(ROM)
 $(BUILDDIR)/%.fix: %.gif
 	$(TILETOOL) --fix -c $< -o $@
 
-$(SROM1): | $(ROM)
-	echo $^ | xargs -r cat > $@ && $(TRUNCATE) -s $(SROMSIZE) $@
+# $(SROM1) rule is defined in Makefile (project-specific assets)
+# $(SROM1): | $(ROM)
+# 	echo $^ | xargs -r cat > $@ && $(TRUNCATE) -s $(SROMSIZE) $@
 
 
 # -----------------------------------
