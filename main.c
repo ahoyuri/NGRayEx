@@ -4,7 +4,7 @@
 #include "hw.h"
 #include "config.h"
 #include "raycast.h"
-#include "map.h"
+#include "hud.h"
 
 /* ---- palette setup --------------------------------------------------- */
 static void init_palettes(void) {
@@ -60,43 +60,6 @@ static void clear_fix(void) {
     for (int i = 0; i < 40 * 32; i++) vram_w(0x0000);
 }
 
-static int prev_px = -1, prev_py = -1;
-static u8  map_on = 1;              /* minimap visible?                       */
-
-static void map_cell(int mx, int my, u16 pal, u16 tile) {
-    fix_poke((u16)(MAP_FIX_COL + mx), (u16)(MAP_FIX_ROW + my), pal, tile);
-}
-
-static void draw_minimap(void) {
-    for (int my = 0; my < MAP_H; my++)
-        for (int mx = 0; mx < MAP_W; mx++) {
-            if (map_at(mx, my))
-                map_cell(mx, my, PAL_MAP_WALL, FIX_SOLID);
-            else
-                map_cell(mx, my, 0, FIX_BLANK);
-        }
-}
-
-/* blank just the minimap's fix region */
-static void clear_minimap(void) {
-    for (int my = 0; my < MAP_H; my++)
-        for (int mx = 0; mx < MAP_W; mx++)
-            map_cell(mx, my, 0, FIX_BLANK);
-}
-
-/* restore the cell the marker was on, then mark the new one */
-static void update_marker(void) {
-    int px, py;
-    if (!map_on) return;
-    rc_player_cell(&px, &py);
-    if (px == prev_px && py == prev_py) return;
-    if (prev_px >= 0) {                 /* repaint old cell as its map content */
-        if (map_at(prev_px, prev_py)) map_cell(prev_px, prev_py, PAL_MAP_WALL, FIX_SOLID);
-        else                          map_cell(prev_px, prev_py, 0, FIX_BLANK);
-    }
-    map_cell(px, py, PAL_MAP_PLAYER, FIX_SOLID);
-    prev_px = px; prev_py = py;
-}
 
  
 static void disable_sprites(void) {
@@ -140,13 +103,24 @@ int main(void) {
     disable_sprites();
     init_background();
     init_walls();
+    hud_init();
     rc_init();
-    draw_minimap();                     /* static walls, drawn once           */
+    hud_draw_minimap();
 
     for (;;) {
         u8 pressed = (u8)~REG_P1CNT;    
         rc_input(pressed);
+
+        u16 line_before = REG_LSPCMODE >> 7;
+        u16 vbl_before = vblank_count;
         rc_render();                    /* DDA during active display          */
+        u16 frames = vblank_count - vbl_before; /* completed Frames */
+        u16 line_after = REG_LSPCMODE >> 7;
+        s16 sub_lines = (s16)(line_after - line_before);
+        
+        u16 total_lines = (u16)(frames * 264 + sub_lines);
+        int fps = total_lines > 0 ? (264 * 60)/total_lines : 999;
+
         wait_vblank();
         watchdog_kick();
         rc_blit();                      /* push to VRAM during vblank         */
@@ -157,14 +131,18 @@ int main(void) {
             static u8 c_prev = 0;
             u8 c_now = pressed & C;
             if (c_now && !c_prev) {
-                map_on = !map_on;
-                if (map_on) { draw_minimap(); prev_px = -1; }  /* -1 forces marker repaint */
-                else          clear_minimap();
+                hud_map_on = !hud_map_on;
+                if (hud_map_on) { hud_draw_minimap(); }
+                else              hud_clear_minimap();
             }
             c_prev = c_now;
         }
 
-        update_marker();                /* 2 fix writes when the cell changes */
+        hud_update_marker();            /* 2 fix writes when the cell changes */
+        
+        
+        hud_draw_fps(fps);
+        hud_draw_time(total_lines);
     }
     return 0;
 }

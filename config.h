@@ -38,12 +38,12 @@
 #define TILE_SOLID 2                /* all pixels = palette index 1          */
 
 /* ---- fix-layer (S-ROM) tile numbers --------------------------------- */
-#define FIX_BLANK  0                /* transparent (all index 0)             */
-#define FIX_SOLID  1                /* all index 15 -> opaque, palette picks color */
+#define FIX_BLANK      0            /* transparent (all index 0)             */
+#define FIX_SOLID      1            /* all index 15 -> opaque, palette picks color */
+#define FIX_DIGIT_BASE 2            /* '0'=2, '1'=3, ... '9'=11             */
 
- 
-#define MAP_FIX_COL 1             
-#define MAP_FIX_ROW 2             
+#define MAP_FIX_COL 1
+#define MAP_FIX_ROW 2
 
 /* ---- palettes -------------------------------------------------------- */
 #define PAL_WALL_LIT  1             /* N/S faces                             */
@@ -52,6 +52,7 @@
 #define PAL_FLOOR     4
 #define PAL_MAP_WALL  5             /* minimap wall block (fix tile, idx 15) */
 #define PAL_MAP_PLAYER 6            /* minimap player marker                 */
+#define PAL_HUD       7             /* HUD text (digits)                     */
 
  
 #define DEPTH_BANDS    14

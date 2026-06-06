@@ -86,7 +86,7 @@ def main():
     s1 = bytearray()
     s1 += bytes(FIX_TILE)            # tile 0: blank
     s1 += bytes([0xFF]) * FIX_TILE   # tile 1: solid index 15
-    s1 += bytes(S_PAD - len(s1))
+    # no padding: Makefile appends font.fix and pads to SROMSIZE
 
     files = {
         "c1.bin": c1,

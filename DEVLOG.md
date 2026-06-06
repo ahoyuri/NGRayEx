@@ -26,3 +26,29 @@ Fix Layer:
 rom/s1.bin
 4-Bit farbtiefe Index 0 = transparent
 -> GIF kommt in den assets/ Ordner und muss dann in der Makefile als Abhängigkeit von $(SROM1) ein
+
+Interrupts (Cartridge):
+Level 1: VBlank  (~60Hz)
+Level 2: Timer   (konfigurierbar über REG_TIMERHIGH/TIMERLOW, 6MHz Pixelclock)
+Level 3: Reset   (nur beim Kaltstart, vom BIOS behandelt)
+
+ngdevkit Callbacks (Linker erkennt diese per Symbolname zur Link-Zeit):
+  void rom_callback_VBlank(void)  -> wird bei jedem VBlank aufgerufen
+  void rom_callback_Timer(void)   -> wird bei Timer-Interrupt aufgerufen
+Keine Deklaration in einer .h nötig - der Linker sucht das Symbol direkt.
+Kein Makro, kein Attribut, kein sei() wie beim ATmega nötig.
+
+Callback = Funktion die man selbst schreibt, aber die das Framework/die Hardware aufruft.
+Man definiert WAS passiert, das System entscheidet WANN (beim IRQ).
+
+Atomarität auf dem 68000:
+  u8  / u16  -> atomar (single bus cycle) -> sicher für IRQ-Variablen
+  u32        -> NICHT atomar (2x 16-Bit) -> IRQ kann dazwischen feuern
+  -> volatile u16 für IRQ-Zähler verwenden
+
+VBlank-Counter für Renderzeit-Messung:
+  u16 before = vblank_count;
+  rc_render();
+  u16 frames = vblank_count - before;
+  // frames == 0: unter 1 Frame (kein Drop), frames >= 1: Frame(s) gedroppt
+  // fps = 60 / (frames + 1)
