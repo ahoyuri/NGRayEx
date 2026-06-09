@@ -29,13 +29,15 @@
 #define BG_BASE   1                
 #define BG_COUNT  (SCRW / 16)       
 #define BG_WIN    14               
-#define WALL_BASE (BG_BASE + BG_COUNT)   
-#define SPR_TOTAL 381               
+#define WALL_BASE  (BG_BASE + BG_COUNT)
+#define FLOOR_BASE (WALL_BASE + NUM_COLS) /* floor columns: slots 101..180     */
+#define SPR_TOTAL 381
 
 /* ---- C-ROM tile numbers (see tools/gen_gfx.py) ----------------------- */
 #define TILE_BLANK 0
 #define TILE_BRICK 1
 #define TILE_SOLID 2                /* all pixels = palette index 1          */
+#define TILE_FLOOR_BASE 3           /* Tiles 3..17 = Floor Slices Index 1..15  */
 
 /* ---- fix-layer (S-ROM) tile numbers --------------------------------- */
 #define FIX_BLANK      0            /* transparent (all index 0)             */
@@ -56,7 +58,8 @@
 
  
 #define DEPTH_BANDS    14
-#define PAL_DEPTH_BASE 8            /* lit: 8..13, dark: 14..19              */
+#define PAL_DEPTH_BASE 8            /* lit: 8..21, dark: 22..35              */
+#define PAL_FLOOR_BASE 36           /* floor columns: 36..115                */
 
 /* ---- movement feel --------------------------------------------------- */
 #define MOVE_SPEED 0.12             

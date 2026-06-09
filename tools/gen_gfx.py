@@ -45,7 +45,6 @@ def tile_blank():
 def tile_solid():
     return [[1] * 16 for _ in range(16)]
 
-
 def tile_brick():
     """Running-bond brick: index 1 mortar, 2 brick body, 3 top highlight."""
     px = [[2] * 16 for _ in range(16)]
@@ -61,13 +60,18 @@ def tile_brick():
                 px[y][x] = 3
     return px
 
+def tile_floor_band(index):
+    """16x16 tile: all pixels = index (1..15), one tile per depth band."""
+    return [[index] * 16 for _ in range(16)]
+
 
 def main():
     here = os.path.dirname(os.path.abspath(__file__))
     out = os.path.join(here, "..", "rom")
     os.makedirs(out, exist_ok=True)
 
-    tiles = [tile_blank(), tile_brick(), tile_solid()]   # indices 0,1,2
+    # indices 0=blank, 1=brick, 2=solid, 3..17=floor bands (index 1..15)
+    tiles = [tile_blank(), tile_brick(), tile_solid()] + [tile_floor_band(i) for i in range(1, 16)]
     c1, c2 = bytearray(), bytearray()
     for t in tiles:
         a, b = encode_tile(t)

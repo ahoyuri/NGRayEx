@@ -46,6 +46,13 @@ Atomarität auf dem 68000:
   u32        -> NICHT atomar (2x 16-Bit) -> IRQ kann dazwischen feuern
   -> volatile u16 für IRQ-Zähler verwenden
 
+Floor rendering buffers:
+  floor_clip[2][NUM_COLS]   (raycast.c, extern) - clip info per column computed in rc_render:
+                              [0][c] = y1: floor top (= wall bottom = top + h)
+                              [1][c] = y2: floor bottom (= SCRH - 1, constant for non-tilting camera)
+  scb2buf_floor[NUM_COLS]   (floor.c, static)  - SCB2 words: hshrink + vshrink (height) per floor sprite
+  scb3buf_floor[NUM_COLS]   (floor.c, static)  - SCB3 words: Y start position per floor sprite
+
 VBlank-Counter für Renderzeit-Messung:
   u16 before = vblank_count;
   rc_render();

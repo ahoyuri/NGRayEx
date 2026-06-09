@@ -4,16 +4,6 @@
 #include "config.h"
 #include "map.h"
 
-/* ---- 16.16 fixed point ---------------------------------------------- */
-typedef s32 fix;
-#define FBITS 16
-#define FONE  (1 << FBITS)
-#define FIX(x) ((fix)((x) * (double)FONE))   /* constant initializers only  */
-
-static inline fix fmul(fix a, fix b) { return (fix)(((int64_t)a * b) >> FBITS); }
-static inline fix fdiv(fix a, fix b) { return (fix)(((int64_t)a << FBITS) / b); }
-static inline fix fabsx(fix a)       { return a < 0 ? -a : a; }
- 
 static inline fix recip(fix b) {
     u32 ab = (b < 0) ? (u32)(-b) : (u32)b;
     if (ab < (u32)(FONE >> 8)) ab = (FONE >> 8);   /* clamp |b| >= 1/256 */
@@ -31,6 +21,9 @@ static u16 scb2buf[NUM_COLS];    /* (HSHRINK<<8)|vshrink                    */
 static u16 scb3buf[NUM_COLS];    /* Y/size word                             */
 static u8  palbuf[NUM_COLS];     /* desired palette this frame              */
 static u8  curpal[NUM_COLS];     /* palette currently in VRAM (cache)       */
+
+/* floor_clip[0][c] = y1 (floor top), floor_clip[1][c] = y2 (floor bottom) */
+u16 floor_clip[2][NUM_COLS];
 
 void rc_init(void) {
     posX = FIX(8.5); posY = FIX(12.5);   /* open floor, clear of all walls     */
@@ -75,6 +68,12 @@ void rc_player_cell(int *cx, int *cy) {
     *cy = posY >> FBITS;
 }
 
+void rc_camera(fix *px, fix *py, fix *dx, fix *dy, fix *plx, fix *ply) {
+    *px = posX; *py = posY;
+    *dx = dirX; *dy = dirY;
+    *plx = planeX; *ply = planeY;
+}
+
 void rc_render(void) {
     for (int x = 0; x < NUM_COLS; x++) {
         /* camera x in [-1, +1] across the screen */
@@ -113,6 +112,9 @@ void rc_render(void) {
         int vsh = h - 1;                    /* on-screen px = vshrink+1      */
         if (vsh < 0)   vsh = 0;
         if (vsh > 255) vsh = 255;
+        
+        floor_clip[0][x] = (u16)(top + (h * 240u) / 256u); /* floor top = last wall row (floor overlaps, higher prio wins) */
+        floor_clip[1][x] = (u16)SCRH;//SCRH;          /* floor bottom = one past last row */
 
         scb2buf[x] = (u16)((HSHRINK << 8) | (vsh & 0xFF));
 		

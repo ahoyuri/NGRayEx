@@ -5,6 +5,7 @@
 #include "config.h"
 #include "raycast.h"
 #include "hud.h"
+#include "floor.h"
 
 /* ---- palette setup --------------------------------------------------- */
 static void init_palettes(void) {
@@ -96,15 +97,17 @@ static void init_walls(void) {
     }
 }
 
+
 int main(void) {
     watchdog_kick();
     clear_fix();
     init_palettes();
     disable_sprites();
-    init_background();
+    /* init_background(); */ /* backdrop diabled for floor test*/
     init_walls();
     hud_init();
     rc_init();
+    init_floor();
     hud_draw_minimap();
 
     for (;;) {
@@ -114,6 +117,7 @@ int main(void) {
         u16 line_before = REG_LSPCMODE >> 7;
         u16 vbl_before = vblank_count;
         rc_render();                    /* DDA during active display          */
+        floor_render();
         u16 frames = vblank_count - vbl_before; /* completed Frames */
         u16 line_after = REG_LSPCMODE >> 7;
         s16 sub_lines = (s16)(line_after - line_before);
@@ -124,6 +128,7 @@ int main(void) {
         wait_vblank();
         watchdog_kick();
         rc_blit();                      /* push to VRAM during vblank         */
+        floor_blit();
 
         /* button C toggles the minimap  */
         {
