@@ -29,8 +29,8 @@
 #define BG_BASE   1                
 #define BG_COUNT  (SCRW / 16)       
 #define BG_WIN    14               
-#define WALL_BASE  (BG_BASE + BG_COUNT)
-#define FLOOR_BASE (WALL_BASE + NUM_COLS) /* floor columns: slots 101..180     */
+#define FLOOR_BASE (BG_BASE + BG_COUNT)   /* floor columns: slots  21..100     */
+#define WALL_BASE  (FLOOR_BASE + NUM_COLS) /* wall columns:  slots 101..180     */
 #define SPR_TOTAL 381
 
 /* ---- C-ROM tile numbers (see tools/gen_gfx.py) ----------------------- */

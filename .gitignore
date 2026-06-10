@@ -53,3 +53,5 @@ rom/c2.bin
 rom/m1.bin
 rom/s1.bin
 rom/v1.bin
+gngeo_log.txt
+compile_commands.json

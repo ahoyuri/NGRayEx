@@ -18,19 +18,21 @@ correct floor casting. A 3-level mip-map (LOD) reduces aliasing on far surfaces.
 
 | | |
 |---|---|
-| ![corridor view](Screenshot_20260609_231713.png) | ![close wall](Screenshot_20260609_231813.png) |
-| ![corner](Screenshot_20260609_231932.png) | |
+| ![corridor view](Screenshot_20260610_235831.png) | ![close wall](Screenshot_20260610_235927.png) |
 
 **HUD (top-right corner):**
 - **Top number** — FPS
 - **Bottom number** — total render time of raycaster + floor render in **tenths of milliseconds**
-  (e.g. `5400` = 540 ms per frame)
+  (e.g. `2164` = ~216 ms per frame)
 
-**The renderer is currently far too slow for real-time use (~1 FPS).**
-The bottleneck is the per-pixel color calculation in the floor render:
-80 columns × 15 bands = 1 200 palette writes per frame, each requiring a
-perspective-correct world-space position, a texture lookup, and a PALRAM write.
-On the 68000 at 12 MHz this exceeds a full frame budget by a large margin.
+Walls now correctly render in front of the floor (sprite index order fixed).
+
+The floor caster uses a per-row step-increment model (identical to DOOM's
+approach): only 15 world-space origins and 15 step vectors are computed per
+column; all other samples within a row are derived by adding the step — no
+division in the inner loop. The raycaster alone runs at ~7 FPS; combined with
+the floor renderer the result is ~4 FPS (~216 ms/frame), which is acceptable
+for this stage.
 
 The clipping data (`floor_clip[0][c]` / `floor_clip[1][c]`) produced by the
 raycaster is general-purpose — it marks the top and bottom of the visible floor
@@ -42,24 +44,26 @@ Currently only the floor is rendered.
 
 ## Next Steps
 
-1. **Performance** — The main bottleneck is the 1 200 PALRAM writes + 1 200
-   texture lookups per frame. Strategies to investigate:
-   - Pre-bake a distance-shaded color ramp and replace the perspective-correct
-     world-space lookup with a simple distance index (at the cost of losing
-     true texture mapping).
-   - Reduce the number of palette updates per frame via dirty-tracking
-     (only update columns/bands whose color changed).
-   - Move palette writes to a tighter VBlank routine.
+1. **More floor resolution** — Each column currently has only 15 color bands
+   (one per sprite tile). Increasing the band count would give smoother depth
+   gradients and a finer texture appearance.
 
-2. **Ceiling** — Mirror the floor pass: sample above the wall and write to a
-   second set of per-column palette sprites. The clipping data is already there.
+2. **Ceiling** — Mirror the floor pass: sample above the wall with flipped
+   positions and write to a second set of per-column palette sprites. The
+   clipping data is already produced by the raycaster.
 
 3. **Replace raycaster with BSP renderer** — The DDA raycaster has inherent
    limitations (no non-axis-aligned walls, no sectors with height variation).
-   The next architectural step is to switch to a BSP tree + line-segment wall
-   representation (DOOM-style), which enables proper portal rendering, variable
-   floor/ceiling heights, and correct depth ordering without the column-by-column
-   scan.
+   The next step is to switch to a BSP tree + line-segment wall representation
+   (DOOM-style), enabling portal rendering, variable floor/ceiling heights, and
+   correct depth ordering.
+
+4. **Sectors** — Variable floor and ceiling heights per room, requiring
+   per-sector geometry data alongside the BSP tree.
+
+5. **Optimize** — Profile the remaining bottlenecks (PALRAM write count,
+   palette dirty-tracking, possible VBlank offload) once the feature set
+   is more complete.
 
 ---
 
