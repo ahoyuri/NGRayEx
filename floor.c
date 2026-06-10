@@ -8,7 +8,7 @@
 #define TEX_H 16
 
 /* 3x3 cross tile: 1=grout, 0=stone. pixel 1 if x%3==1 || y%3==1 */
-static const u8 floor_pattern[TEX_H * TEX_W] = {
+static u8 floor_pattern[TEX_H * TEX_W] = {
     /* y=0  */ 0,1,0, 0,1,0, 0,1,0, 0,1,0, 0,1,0, 0,
     /* y=1  */ 1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,1,1, 1,
     /* y=2  */ 0,1,0, 0,1,0, 0,1,0, 0,1,0, 0,1,0, 0,
@@ -31,7 +31,7 @@ static u16 scb2buf_floor[NUM_COLS];
 static u16 scb3buf_floor[NUM_COLS];
 
 /* LOD1: 2×2 box-filter of floor_pattern → 8×8, values = grout count in 2×2 (0,2,3) */
-static const u8 lod1_pat[8 * 8] = {
+static u8 lod1_pat[8 * 8] = {
     /* y=0 */ 3,2,3,3,2,3,3,2,
     /* y=1 */ 2,0,2,2,0,2,2,0,
     /* y=2 */ 3,2,3,3,2,3,3,2,
@@ -43,25 +43,35 @@ static const u8 lod1_pat[8 * 8] = {
 };
 
 /* LOD0: exact stone/grout */
-static const u16 lod0_col[2] = { 0x0B96, 0x0222 }; /* RGB(22,18,12) / RGB(4,4,4) */
+static u16 lod0_col[2] = { 0x0B96, 0x0222 }; /* RGB(22,18,12) / RGB(4,4,4) */
 /* LOD1: blend by grout count 0,2,3 out of 4 pixels */
-static const u16 lod1_col[4] = { 0x0B96, 0x0654, 0x6654, 0x4443 }; /* 0%, -, 50%, 75% grout */
+static u16 lod1_col[4] = { 0x0B96, 0x0654, 0x6654, 0x4443 }; /* 0%, -, 50%, 75% grout */
 /* LOD2: constant avg = 4/9*stone + 5/9*grout = RGB(12,10,8) */
-static const u16 lod2_col = 0x0654;
+static u16 lod2_col = 0x0654;
 
-static u16 get_floor_texture_pixel(fix worldX, fix worldY, fix rowDistance) {
-    int dist = (int)(rowDistance >> FBITS); /* integer world-unit distance */
-    if (dist >= 3) {
-        return lod2_col;
-    } else if (dist >= 1) {
-        int tx = (int)(worldX >> (FBITS-2)) & 7;
-        int ty = (int)(worldY >> (FBITS-2)) & 7;
-        return lod1_col[lod1_pat[ty * 8 + tx]];
-    } else {
-        int tx = (int)(worldX >> (FBITS-2)) & (TEX_W - 1);
-        int ty = (int)(worldY >> (FBITS-2)) & (TEX_H - 1);
-        return lod0_col[floor_pattern[ty * TEX_W + tx]];
-    }
+static u16 get_floor_texture_pixel(fix worldX, fix worldY, u16 c) {
+    //int dist = (int)(rowDistance >> FBITS); /* integer world-unit distance */
+    //if (dist >= 3) {
+    //    return lod2_col;
+    //} else if (dist >= 1) {
+    //    int tx = (int)(worldX >> (FBITS-2)) & 7;
+    //    int ty = (int)(worldY >> (FBITS-2)) & 7;
+    //    return lod1_col[lod1_pat[ty * 8 + tx]];
+    //} else {
+    //    int tx = (int)(worldX >> (FBITS-2)) & (TEX_W - 1);
+    //    int ty = (int)(worldY >> (FBITS-2)) & (TEX_H - 1);
+    //    return lod0_col[floor_pattern[ty * TEX_W + tx]];
+    //}
+    //return (worldX >> FBITS) + (worldY >> FBITS);
+    //u16 tx, ty;
+    //__asm__ (
+    //        "swap   %1  \n\t"
+    //        "move.w %1, %0"
+    //        : "=&d" (tx)
+    //        : "d"   (worldX)
+    //);
+    //return tx;
+    return floor_pattern[c % (TEX_H*TEX_W)]; 
 }
 
 void init_floor(void){
@@ -113,7 +123,7 @@ void floor_render(void){
                 fix worldX = posX + fmul(rowDistance, dirX + fmul(planeX, cameraX));
                 fix worldY = posY + fmul(rowDistance, dirY + fmul(planeY, cameraX));
                 
-                u16 color = get_floor_texture_pixel(worldX, worldY, rowDistance);
+                u16 color = get_floor_texture_pixel(worldX, worldY, c);
                 pal_set(PAL_FLOOR_BASE + c, (u16)(i + 1), color);
             }
 
