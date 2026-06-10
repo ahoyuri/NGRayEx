@@ -1,5 +1,4 @@
-build/main.o
-build/raycast.o
+build/*.o
 build/rom.elf
 build/.generated
 build/rom/neogeo.zip
