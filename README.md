@@ -67,6 +67,20 @@ Currently only the floor is rendered.
 
 ---
 
+## Old Versions
+
+I just realy like the screenshots, so LOOK at them !
+
+### Old Version I
+floor pixel are all diffrent scaled. 15 per floor_slice not matter what.
+
+| | |
+|---|---|
+| ![corridor view](Screenshot_20260609_231713.png) | ![close wall](Screenshot_20260609_231813.png) |
+| ![corner](Screenshot_20260609_231932.png) | |
+
+---
+
 ## How it works (current raycaster)
 
 Every frame, for each of 80 screen columns:
