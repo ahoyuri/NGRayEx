@@ -51,9 +51,11 @@ static const u16 lod2_col = 0x0654;
 
 static u16 get_floor_texture_pixel(fix worldX, fix worldY, fix rowDistance) {
     int dist = (int)(rowDistance >> FBITS); /* integer world-unit distance */
-    if (dist >= 3) {
+    //return (((worldX >> FBITS) % 2) ^ ((worldY >> FBITS) % 2)) ? (lod2_col):(0); 
+
+    if (dist >= 6) {
         return lod2_col;
-    } else if (dist >= 1) {
+    } else if (dist >= 4) {
         int tx = (int)(worldX >> (FBITS-2)) & 7;
         int ty = (int)(worldY >> (FBITS-2)) & 7;
         return lod1_col[lod1_pat[ty * 8 + tx]];
@@ -82,7 +84,82 @@ void init_floor(void){
     }
 }
 
+#define SPR_PX_COUNT 15
 void floor_render(void){
+    fix posX, posY, dirX, dirY, planeX, planeY;
+    rc_camera(&posX, &posY, &dirX, &dirY, &planeX, &planeY);
+
+    /* calculate the 15 world cords. and the x_step */
+    fix world_cords[2][SPR_PX_COUNT] = {0};
+    
+    // compile-time constants !!!
+    static const fix cameraX_0 = 0 - FONE; //for column 0
+    static const fix cameraX_1 = (fix)((FONE << 1) / (NUM_COLS - 1)) - FONE;
+
+    /* floor takes half of the screen */
+    static const u16 floor_top = SCRH / 2;
+    static const u16 floor_bot = SCRH;
+    static const u16 range = (floor_bot - floor_top);
+
+    fix x_step[SPR_PX_COUNT], y_step[SPR_PX_COUNT];
+    fix rowDist[SPR_PX_COUNT];
+
+    /* world cord, disance and step calculation*/
+    for(int c = 0; c < SPR_PX_COUNT;c++){
+        u16 y = floor_top + (u16)(((2*c + 1) * range) / (SPR_PX_COUNT * 2)); /* could be pre calculateted */
+        u16 denom = (y > SCRH/2) ? (u16)(y - SCRH/2) : 1;                    // this too
+        fix rowDistance = (fix)(((s32)(SCRH/2) << FBITS) / denom);           // this too
+        rowDist[c] = (fix)((SCRH / 2) * FONE) / (y - SCRH / 2);              // this too
+
+        /* Thats the only thing that realy has to be calculatet live */
+        world_cords[0][c] = posX + fmul(rowDistance, dirX + fmul(planeX, cameraX_0));
+        world_cords[1][c] = posY + fmul(rowDistance, dirY + fmul(planeY, cameraX_0));
+
+        x_step[c] = (posX + fmul(rowDist[c], dirX + fmul(planeX, cameraX_1))) - world_cords[0][c];
+        y_step[c] = (posY + fmul(rowDist[c], dirY + fmul(planeY, cameraX_1))) - world_cords[1][c];
+    }
+
+
+    /* getting the floor pixel information */
+    for(u16 c=0; c < NUM_COLS; c++){
+        u16 floor_slice_top = floor_clip[0][c];
+        u16 floor_slice_bot = floor_clip[1][c];
+        u16 range_slice = (floor_slice_bot - floor_slice_top);
+
+        u16 i_start = (floor_slice_top - floor_top) * SPR_PX_COUNT / range;
+        u16 i_end   = (floor_slice_bot - floor_top) * SPR_PX_COUNT / range;
+        
+        u16 r_start = floor_top + (u16)((u32)i_start * range / SPR_PX_COUNT);
+        u16 r_range = (u16)((u32)(i_end - i_start) * range / SPR_PX_COUNT);
+
+
+        /* sprite position and length */
+        u16 tile_count = i_end - i_start;
+        u16 vsh_f = tile_count > 0 ? (u16)(((u32)r_range * 16u - 1u) / tile_count) : 0u;
+        scb2buf_floor[c] = (u16)((HSHRINK << 8) | vsh_f);
+        scb3buf_floor[c] = scb3_word(r_start, 0, tile_count);  /* works only if it goes completely down !*/
+
+        //color palette berechnen
+        int j = 0;
+        for(u16 i = 0; i < SPR_PX_COUNT;i++){
+            fix x = world_cords[0][i] + x_step[i];
+            fix y = world_cords[1][i] + y_step[i];
+
+            if(i >= i_start && i <= i_end){
+                u16 color = get_floor_texture_pixel(x, y, rowDist[i]);
+                pal_set(PAL_FLOOR_BASE + c, (u16)(j + 1), color);
+                j++;
+            }
+            world_cords[0][i] = x;
+            world_cords[1][i] = y;
+        }
+        
+    }
+
+
+}
+
+void floor_render_old(void){
         /* for each wall slice (NUM_COLS):
          *      take the clipping information y1 and y2
          *      devide it to get the pixel positions (/15)
@@ -104,6 +181,7 @@ void floor_render(void){
             u16 floor_bot = floor_clip[1][c];
 
             u16 range = (floor_bot - floor_top);
+            
             //if(range == 0) continue;
             fix cameraX = (fix)(((int64_t)2 * FONE * c) / (NUM_COLS - 1)) - FONE;
             for(u16 i = 0; i < 15; i++){
@@ -122,9 +200,6 @@ void floor_render(void){
             scb2buf_floor[c] = (u16)((HSHRINK << 8) | vsh_f);
             scb3buf_floor[c] = scb3_word(floor_top, 0, 15);
         }
-
-
-
 }
 
 void floor_blit(void) {
