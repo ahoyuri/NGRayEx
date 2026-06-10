@@ -2,7 +2,7 @@
 #
 # regular case: pass the rompath to the emulator
 
-SCALE_WIN=8
+SCALE_WIN=4
 SCALE_FULL?=5
 
 MAME?=mame
@@ -27,7 +27,7 @@ endif
 ifneq ($(ENABLE_MINGW),yes)
 $(call export_path,gngeo)
 gngeo:
-	$(GNGEO) $(SHADEROPTS) $(EXTRAOPTS) --scale $(SCALE_WIN) --no-resize -i $(ROM) $(GAMEROM)
+	$(GNGEO) $(SHADEROPTS) $(EXTRAOPTS) --scale $(SCALE_WIN) -i $(ROM) $(GAMEROM)
 
 $(call export_path,gngeo-fullscreen)
 gngeo-fullscreen:
