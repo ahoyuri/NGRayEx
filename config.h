@@ -11,7 +11,7 @@
  * NUM_COLS wall columns, each COLW pixels wide. COLW must divide SCRW.
  * Sprite horizontal width = HSHRINK+1, so HSHRINK = COLW-1.
  */
-#define NUM_COLS 80
+#define NUM_COLS 64
 #define COLW     (SCRW / NUM_COLS)  /* 4 px                                  */
 #define HSHRINK  (COLW - 1)        
  
@@ -28,10 +28,11 @@
  */
 #define BG_BASE   1                
 #define BG_COUNT  (SCRW / 16)       
-#define BG_WIN    14               
+#define BG_WIN    14
+#define FLOOR_SPRT_C 3  /* sprites per floor slice; 3x15pxl = 45 */
 #define FLOOR_BASE (BG_BASE + BG_COUNT)   /* floor columns: slots  21..100     */
-#define WALL_BASE  (FLOOR_BASE + NUM_COLS) /* wall columns:  slots 101..180     */
-#define SPR_TOTAL 381
+#define WALL_BASE  (FLOOR_BASE + NUM_COLS * FLOOR_SPRT_C) /* wall columns:  slots 101..180     */
+#define SPR_TOTAL WALL_BASE + NUM_COLS + 1
 
 /* ---- C-ROM tile numbers (see tools/gen_gfx.py) ----------------------- */
 #define TILE_BLANK 0
