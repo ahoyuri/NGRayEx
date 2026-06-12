@@ -53,9 +53,9 @@ static u16 get_floor_texture_pixel(fix worldX, fix worldY, fix rowDistance) {
     int dist = (int)(rowDistance >> FBITS); /* integer world-unit distance */
     //return (((worldX >> FBITS) % 2) ^ ((worldY >> FBITS) % 2)) ? (lod2_col):(0); 
 
-    if (dist >= 6) {
+    if (dist >= 5) {
         return lod2_col;
-    } else if (dist >= 4) {
+    } else if (dist >= 1) {
         int tx = (int)(worldX >> (FBITS-2)) & 7;
         int ty = (int)(worldY >> (FBITS-2)) & 7;
         return lod1_col[lod1_pat[ty * 8 + tx]];

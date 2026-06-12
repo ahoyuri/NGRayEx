@@ -1,61 +1,42 @@
+# NGRayEx — Dev Log
 
-run command with resizable window:
-ngdevkit-gngeo -b glsl --scale 4 -i build/rom puzzledp
+---
 
-Fix Layer VRAM-Bereich:
-Start:  $7000
-End:    $74FF
-Größe:  1280 Wörter (40 x 32)
+## 2026-06-11 — Floor renderer working, walls now render correctly on top
 
-spaltenweise gemappt (top->bottom, left->right)
-Adresse = $7000 + col * 32 + row (siehe hw.h fix_poke)
+**Goal:** Fix render order so walls appear in front of the floor.
+
+**Approach:** On the Neo Geo, higher sprite indices render in front. FLOOR_BASE
+and WALL_BASE were swapped — floor sprites had higher indices than wall sprites.
+Fix: reorder the defines in config.h so floor comes first (lower index).
+
+**Result:** One-line change in config.h. Walls now correctly occlude the floor.
+
+---
+
+## 2026-06-12 - multiple sprites in one slice for higher resolution
+
+**Goal:** A slice can render more then 15 pxl.
+
+**Approche:** multiple sprites with there own color pallets in one slice.
+- The Initial stepp of the FLOOR_SLICE needs to be variable. With the correct amount of pallets.
+- The Pixel and color palet calculation checks in wich palet it needs to write.
+- The amount of slices needs to be reduced from 80 to 64 to get 3 Sprites
 
 
-SCB = Sprite Control Block
-SCB1 Tile-Daten: welche Tiles + welche Palette
-SCB2 Zoom/shrink: horizontale & vertikale Skalierung
-SCB3 Y-Position + Sticky-Bit + Höhe (in Tiles)
-SCB4 X-Position
 
-SCB2-4 sind 512Wörter groß, SCB1 = 32.768 Wörter. Sprites bis zu 64 Tiles.
-sticky bit  dann erbt das nächste Sprote die X-Position und Zoom vom vorherigen.
-So baut man breite Objekte aus mehreren Sprite Streifen zusammen.
+<!--
+Template for new entries:
 
-Fix Layer:
-8x8-Pixel-Tiles diese liegen im S-ROM
-rom/s1.bin
-4-Bit farbtiefe Index 0 = transparent
--> GIF kommt in den assets/ Ordner und muss dann in der Makefile als Abhängigkeit von $(SROM1) ein
+## YYYY-MM-DD — Short title
 
-Interrupts (Cartridge):
-Level 1: VBlank  (~60Hz)
-Level 2: Timer   (konfigurierbar über REG_TIMERHIGH/TIMERLOW, 6MHz Pixelclock)
-Level 3: Reset   (nur beim Kaltstart, vom BIOS behandelt)
+**Goal:** What do I want to achieve?
 
-ngdevkit Callbacks (Linker erkennt diese per Symbolname zur Link-Zeit):
-  void rom_callback_VBlank(void)  -> wird bei jedem VBlank aufgerufen
-  void rom_callback_Timer(void)   -> wird bei Timer-Interrupt aufgerufen
-Keine Deklaration in einer .h nötig - der Linker sucht das Symbol direkt.
-Kein Makro, kein Attribut, kein sei() wie beim ATmega nötig.
+**Approach:** How am I planning to do it?
 
-Callback = Funktion die man selbst schreibt, aber die das Framework/die Hardware aufruft.
-Man definiert WAS passiert, das System entscheidet WANN (beim IRQ).
+**Problem:** What is blocking me / what is unclear?
 
-Atomarität auf dem 68000:
-  u8  / u16  -> atomar (single bus cycle) -> sicher für IRQ-Variablen
-  u32        -> NICHT atomar (2x 16-Bit) -> IRQ kann dazwischen feuern
-  -> volatile u16 für IRQ-Zähler verwenden
+**Result:** What worked, what didn't, what did I learn?
 
-Floor rendering buffers:
-  floor_clip[2][NUM_COLS]   (raycast.c, extern) - clip info per column computed in rc_render:
-                              [0][c] = y1: floor top (= wall bottom = top + h)
-                              [1][c] = y2: floor bottom (= SCRH - 1, constant for non-tilting camera)
-  scb2buf_floor[NUM_COLS]   (floor.c, static)  - SCB2 words: hshrink + vshrink (height) per floor sprite
-  scb3buf_floor[NUM_COLS]   (floor.c, static)  - SCB3 words: Y start position per floor sprite
-
-VBlank-Counter für Renderzeit-Messung:
-  u16 before = vblank_count;
-  rc_render();
-  u16 frames = vblank_count - before;
-  // frames == 0: unter 1 Frame (kein Drop), frames >= 1: Frame(s) gedroppt
-  // fps = 60 / (frames + 1)
+---
+-->
